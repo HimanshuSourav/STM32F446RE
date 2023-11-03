@@ -105,9 +105,7 @@ int main()
 	
 	while(1)
 	{
-		led5.glow();
-		led5.pseudo_delay();
-		led5.stopglow();
+		led5.toggle();
 		led5.pseudo_delay();
 	}
 	return 0;
