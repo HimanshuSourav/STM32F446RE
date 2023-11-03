@@ -51,9 +51,9 @@ int main()
 	RCC_AHB1ENR |= (1U<<0); /*Enable Clock to GPIOA*/
 	
 	const led_template<std::uint32_t,
-											std::uint32_t,
-											mcal::reg::gpioa,
-											mcal::reg::gpio_pin5> led_on_p5;
+				std::uint32_t,
+				mcal::reg::gpioa,
+				mcal::reg::gpio_pin5> led_on_p5;
 	while(1)
 	{
 		led_on_p5.toggle();
