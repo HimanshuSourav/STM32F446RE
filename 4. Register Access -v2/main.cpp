@@ -1,57 +1,88 @@
 #include "mcal_reg.h"
 
-typedef struct bit32_type{
-	std::uint32_t b0:1;
-	std::uint32_t b1:1;
-	std::uint32_t b2:1;
-	std::uint32_t b3:1;
-	std::uint32_t b4:1;
-	std::uint32_t b5:1;
-	std::uint32_t b6:1;
-	std::uint32_t b7:1;
-	std::uint32_t b8:1;
-	std::uint32_t b9:1;
-	std::uint32_t b10:1;
-	std::uint32_t b11:1;
-	std::uint32_t b12:1;
-	std::uint32_t b13:1;
-	std::uint32_t b14:1;
-	std::uint32_t b15:1;
-	std::uint32_t b16:1;
-	std::uint32_t b17:1;
-	std::uint32_t b18:1;
-	std::uint32_t b19:1;
-	std::uint32_t b20:1;
-	std::uint32_t b21:1;
-	std::uint32_t b22:1;
-	std::uint32_t b23:1;
-	std::uint32_t b24:1;
-	std::uint32_t b25:1;
-	std::uint32_t b26:1;
-	std::uint32_t b27:1;
-	std::uint32_t b28:1;
-	std::uint32_t b29:1;
-	std::uint32_t b30:1;
-	std::uint32_t b31:1;
-}
-bit32_type;
+//Mode Register offset 0x00
+//RCC 0x4002 3800 - 0x4002 3BFF ; from memory map section
+//ODR offset 0x14
+//AHB1ENR = AHB1+RCC+0x30
+
+#define RCC_OFFSET       (0x00003800UL)
+#define RCC_BASE         (AHB1_BASE + RCC_OFFSET)
+
+#define RCC_AHB1ENR (*((volatile unsigned int*)0x40023830UL))
+#define GPIO_MODER (*((volatile unsigned int*)0x40020000UL))	
+#define GPIO_ODR (*((volatile unsigned int*)0x40020014UL))	
+	
+//template <typename port_type, typename bval_type, const port_type port, const bval_type bval>
+template<typename register_address_type,
+					typename register_value_type>
+					
+	
+class reg_access_dynamic
+{
+	public:
+		static void reg_set(register_address_type address, register_value_type val )
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) = static_cast<register_value_type>(val);
+		}
+		
+		static register_value_type reg_get(register_address_type address)
+		{
+			return *reinterpret_cast<volatile register_address_type*>(address);
+		}
+		
+		static void reg_or(register_address_type address, register_value_type val)
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) |= static_cast<register_value_type>(val);
+		}
+		
+		static void reg_and(register_address_type address, register_value_type val)
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) &= static_cast<register_value_type>(val);
+		}
+		
+		static void reg_not(register_address_type address, register_value_type val)
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) &= static_cast<register_value_type>(~val);
+		}
+		
+		static void set_bit(register_address_type address, register_value_type val)
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) &= static_cast<register_value_type>(1U<<val);
+		}
+		
+		static void clr_bit(register_address_type address, register_value_type val)
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) |= static_cast<register_value_type>(~(1U<<val));
+		}
+		
+		static void not_bit(register_address_type address, register_value_type val)
+		{
+			*reinterpret_cast<volatile register_address_type*>(address) ^= static_cast<register_value_type>(1U<<val);
+		}
+		
+		static bool get_bit(register_address_type address, register_value_type val)
+		{
+			return((reg_get(address)& static_cast<register_value_type>(1U<<val)) != static_cast<register_value_type>(0U));
+		}
+	
+	
+};
 	
 int main()
 {
 	
-	std::uint32_t ahbenr = mcal::reg::rcc::ahb1enr;
-	std::uint32_t gpiob  = mcal::reg::gpio::cfg_regs::gpiob_cfg::gpiob_odr;
+	/*Enable Clock to Port B*/
+	reg_access_dynamic<std::uint32_t, std::uint32_t>::reg_or(mcal::reg::rcc::ahb1enr,( 1U<<1));
 	
-	reinterpret_cast<volatile bit32_type*>(ahbenr)->b1 = 1U;
-	
+	/*set first 8 pins of GPIOB to high*/
+	reg_access_dynamic<std::uint32_t, std::uint32_t>::reg_set(mcal::reg::gpio::cfg_regs::gpiob_cfg::gpiob_odr, 0xFF);
 	
 	while(1)
 	{
-		reinterpret_cast<volatile bit32_type*>(gpiob)->b5 ^=1U;
+		//toggle bit 12
+		reg_access_dynamic<std::uint32_t, std::uint32_t>::not_bit(mcal::reg::gpio::cfg_regs::gpiob_cfg::gpiob_odr, 12);
+		
 	}
-	
-	
-	
 		
 		return 0;
 }
